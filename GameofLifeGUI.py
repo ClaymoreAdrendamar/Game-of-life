@@ -7,9 +7,12 @@ from copy import deepcopy
 class environment(object):
     def __init__(self):
         self.universe = universe()
-        self.universe.generate_grid(50,50)
+        width = int(input("Grid width: "))
+        height = int(input("Grid height: "))
+        self.cell_size = int(input("Cell size: "))
+        self.universe.generate_grid(width,height)
+        
         pygame.init()
-        self.cell_size = 10
         self.screen = pygame.display.set_mode((self.universe.width*(self.cell_size+1)-1, self.universe.height*(self.cell_size+1)-1))
         pygame.display.set_caption('Conway\'s game of life Step: {}'.format(self.universe.steps))
         self.redraw = True
