@@ -1,130 +1,111 @@
-""" Rules  of Conwell's game of life:
-    - Any live cell with under 2 live neighbours dies from exposure
-    - Any live cell with over 3 live neighbours dies from overpopulation
-    - Any live cell with 2~3 live neighbours lives
-    - any dead cell with exactly 3 live neighbours comes to life
-
-Cells:
-    - 0 : Dead
-    - 1 : Alive"""
-
+from OldGameofLife import OldUniverse
 from copy import deepcopy
-from random import randint
 
-class universe(object):
-    def __init__(self, grid=None, steps=0):
-        """ Intitialise the universe with the passed grid or an empty one """
-        self.steps = steps
+class universe():
+    """ A new optimised universe """
+    def __init__(self, grid=None):
         if grid:
             self.grid = deepcopy(grid)
-            self.width = len(grid)
-            self.height = len(grid[0])
         else:
-            self.generate_grid(40, 20)
-
-    def generate_grid(self, width, height):
-        """ Create an empty grid of size: width*height """
-        self.width = width
-        self.height = height
-        self.grid = [[0 for row in range(height)] for column in range(width)]
-
-    def __str__(self):
-        """ String representation of the grid """
-        string = ''.join(['-' for i in range(self.width)]) + '\n' # List comprehension to string
-        for row in range(self.height):
-            for column in range(self.width):
-                cell = self.grid[column][row]
-                if cell == 0:
-                    string += ' '
-                else:
-                    string += '|'
-            string += '\n'
-
-        string += '\n' + ''.join(['-' for i in range(self.width)])
-        return string
-
-    def step(self):
-        updated = False
-        game = universe(self.grid, self.steps+1)
+            self.clear()
         
-        for row in range(self.height):
-            for column in range(self.width):
-                live_neighbours = 0
-                if row > 0:
-                    live_neighbours += self.grid[column][row-1] # Check on top
-                    if column > 0:
-                        live_neighbours += self.grid[column-1][row-1] # Check top left
-                    if column < self.width-1:
-                        live_neighbours += self.grid[column+1][row-1] # Check top right
-                if row < self.height-1:
-                    live_neighbours += self.grid[column][row+1] # Check at bottom
-                    if column > 0:
-                        live_neighbours += self.grid[column-1][row+1] # Check bottom left
-                    if column < self.width-1:
-                        live_neighbours += self.grid[column+1][row+1] # Check bottom right
-                if column > 0:
-                    live_neighbours += self.grid[column-1][row] # Check left
-                if column < self.width-1:
-                    live_neighbours += self.grid[column+1][row] # Check right
+    def clear(self):
+        self.grid = []
+        
+    def step(self):
+        game = self.__class__(self.grid)
+        
+        for cell in self.grid:
+            # Reproduce
+            for t_cell in self.neighbours(cell):
+                if self.live_neighbours(t_cell) == 3:
+                    game.set_cell(t_cell, True)
+            # Kill the overpoplated or underpopulated cells
+            if self.live_neighbours(cell) not in [2,3]:
+                game.set_cell(cell, False)
 
-                if game.evolve(column, row, live_neighbours):
-                    updated = True
-
-        self.grid = game.grid
-        self.steps += 1
-        return updated
-                
-    def evolve(self, column, row, live_neighbours):
-        updated = False
-        state = self.grid[column][row]
-        #print(live_neighbours)
-        if live_neighbours not in [2,3] and state != 0: # Exposure and overpopulation
-            self.grid[column][row] = 0
-            updated = True
-        elif live_neighbours == 3 and state != 1:
-            self.grid[column][row] = 1
-            updated = True
-        return updated
             
 
-    def toggle_state(self, column, row):
-        self.grid[column][row] = 1 - self.grid[column][row] # Change between 0-1 and 1-0
-
-    def set_cell(self, column, row, state):
-        self.grid[column][row] = state
-
-    def clear(self):
-        self.grid = [[0 for row in range(self.height)] for column in range(self.width)]
-        self.steps = 0
-
-    def fill(self):
-        self.grid = [[1 for row in range(self.height)] for column in range(self.width)]
-        self.steps = 0
-
-    def random(self):
-        self.grid = [[randint(0, 1) for row in range(self.height)] for column in range(self.width)]
-        self.steps = 0
-
-    def invert(self):
-        self.grid = [[1 - self.grid[column][row] for row in range(self.height)] for column in range(self.width)]
-        self.steps = 0
-
-    def empty(self):
-        iterator = iter(self.grid)
-        try:
-            first = next(iterator)
-        except StopIteration:
+        if self.__dict__ != game.__dict__:
+            self.__dict__ = game.__dict__
             return True
-        return all(first == rest for rest in iterator)
-if __name__ == '__main__':
-    game = universe()
-    print(game)
-    game.set_cell(3,5,1)
-    game.set_cell(4,5,1)
-    game.set_cell(3,6,1)
-    game.set_cell(4,7,1)
-    game.set_cell(5,5,1)
+        else:
+            return False
+        
 
-    for i in range(10000):
-        print(game)
-        game.step()
+    def live_neighbours(self, cell):
+        live_neighbours = 0
+        for t_cell in self.neighbours(cell):
+            #print("Considering cell's neighbour: {}".format(t_cell))
+            if t_cell in self.grid:
+                #print("Cell {} is Active".format(t_cell))
+                live_neighbours += 1
+
+        return live_neighbours
+
+    def neighbours(self, cell):
+        return [[x+cell[0], y+cell[1]] for x in range(-1,2) for y in range(-1,2) if x or y ]
+
+    def set_cell(self, cell, state):
+        try:
+            index = self.grid.index(cell) #Get the index of the cell if it exists
+            # Else, it throws a ValueError
+            if not state: # If state is false
+                del self.grid[index] # Delete the cell
+        except ValueError: # The cell doesn't exist
+            if state: # If state is True
+                self.grid.append(cell) # Create the cell
+
+    def belong(self, cell):
+        if cell in self.grid:
+            return True
+        else:
+            return False
+
+    def toggle_state(self, cell):
+        if self.belong(cell):
+            self.set_cell(cell, False)
+        else:
+            self.set_cell(cell, True)
+
+    def transform(self, x, y):
+        for cell in self.grid:
+            cell[0] += x
+            cell[1] += y
+
+    def __str__(self):
+        if self.grid != []:
+            min_y = min(cell[1] for cell in self.grid)
+            min_x = min(cell[0] for cell in self.grid)
+
+            y_coef = -1*min_y
+            x_coef = -1*min_x
+            
+            width = max(cell[0] for cell in self.grid)+x_coef + 1
+            height = max(cell[1] for cell in self.grid)+y_coef + 1
+            print('Height: {}, Width: {}'.format(height, width))
+            
+            grid = [[x+x_coef,y+y_coef] for x,y in self.grid]
+            
+            string = '\n'
+            div = ''.join(['-' for i in range(width)]) + '\n'
+            string += div
+            for row in range(height):
+                for column in range(width):
+                    if self.belong([column-x_coef, row-y_coef]):
+                        string += 'X'
+                    else:
+                        string += ' '
+                string += '\n'
+            string += div
+        else:
+            string = '\n-----\nEMPTY\n-----\n'
+        return string
+    
+if __name__=='__main__':
+    import UniverseTest
+            
+                
+
+            
+            
