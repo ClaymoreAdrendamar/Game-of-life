@@ -16,7 +16,7 @@ class GUI(object):
         self.end = False
 
         self.last_transform_time = self.last_time = time.time()
-        self.speed = 0.0 # Time between each update in seconds
+        self.speed = 0.1 # Time between each update in seconds
 
         self.pause = True
         self.old_grid = deepcopy(self.universe.grid)
@@ -50,6 +50,8 @@ class GUI(object):
                 screen=pygame.display.set_mode(event.dict['size'],RESIZABLE)
                 self.redraw = True
                 print('[+] Resized window')
+                screen_width, screen_height = pygame.display.get_surface().get_size()
+                print('Screen width: {}, height: {}'.format(screen_width, screen_height))
             elif event.type == MOUSEBUTTONDOWN:
                 if event.button == 1 and self.pause == True: # Left click and paused
                     print('[~] Left click')
@@ -112,16 +114,16 @@ class GUI(object):
         current_time = time.time()
         if current_time - self.last_transform_time >= 0.1:
             if self.left:
-                self.universe.transform(-1,0)
-                self.redraw = True
-            if self.right:
                 self.universe.transform(1,0)
                 self.redraw = True
+            if self.right:
+                self.universe.transform(-1,0)
+                self.redraw = True
             if self.up:
-                self.universe.transform(0,-1)
+                self.universe.transform(0,1)
                 self.redraw = True
             if self.down:
-                self.universe.transform(0,1)
+                self.universe.transform(0,-1)
                 self.redraw = True
             self.last_transform_time = current_time
                 
@@ -143,7 +145,6 @@ class GUI(object):
         # Fill the screen
         self.screen.fill((0,0,0))
         screen_width, screen_height = pygame.display.get_surface().get_size()
-        print('Screen width: {}, height: {}'.format(screen_width, screen_height))
         width = int(screen_width / self.cell_size)
         height = int(screen_height / self.cell_size)
         # Draw universe
@@ -157,7 +158,6 @@ class GUI(object):
                     colour = (150,150,150)
                 pygame.draw.rect(self.screen, colour, (x,y,self.cell_size,self.cell_size), 0)
         pygame.display.update()
-        print('[+] Screen updated')
     
 
 if __name__ == '__main__':
