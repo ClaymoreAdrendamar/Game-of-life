@@ -1,4 +1,3 @@
-from OldGameofLife import OldUniverse
 from copy import deepcopy
 
 class universe():
