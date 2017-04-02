@@ -11,14 +11,18 @@ class universe():
     def clear(self):
         self.grid = []
         
+
     def step(self):
         game = self.__class__(self.grid)
+        handled = []
         
         for cell in self.grid:
             # Reproduce
             for t_cell in self.neighbours(cell):
-                if self.live_neighbours(t_cell) == 3:
-                    game.set_cell(t_cell, True)
+                if t_cell not in handled:
+                    handled.append(t_cell)
+                    if self.live_neighbours(t_cell) == 3:
+                        game.set_cell(t_cell, True)
             # Kill the overpoplated or underpopulated cells
             if self.live_neighbours(cell) not in [2,3]:
                 game.set_cell(cell, False)
